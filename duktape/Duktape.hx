@@ -1,5 +1,10 @@
 package duktape;
 
+import cpp.Function;
+import cpp.Pointer;
+import haxe.Constraints;
+import Type;
+
 @:keep
 @:include('linc_duktape.h')
 #if !display
@@ -7,35 +12,65 @@ package duktape;
 @:build(linc.Linc.xml('duktape'))
 #end
 extern class Duktape {
-
-    @:native('duk_create_heap_default')
+	// Duktape.
+	
+  @:native('duk_create_heap_default')
 	static function newContext() : DukContext;
 
 	@:native('duk_eval_string')
 	static function evalString(ctx:DukContext, src:String) : Void;
 
+	@:native('duk_peval_string')
+	static function pevalString(ctx:DukContext, src:String) : Bool;
+
+  @:native('duk_eval_string_noresult')
+	static function evalStringNoResult(ctx:DukContext, src:String) : Void;
+
 	@:native('duk_get_int')
 	static function getInt(ctx:DukContext, idx:Int) : Int;
 
-    //external native function definition
-    //can be wrapped in linc::libname or call directly
-    //and the header for the lib included in linc_duktape.h
+	@:native('duk_to_string')
+	static function toString(ctx:DukContext, idx:Int) : Dynamic;
+	
+	@:native('duk_safe_to_string')
+	static function safeToString(ctx:DukContext, idx:Int) : Dynamic;
 
-    @:native('linc::duktape::example')
-    static function example() : Int;
+	@:native('duk_get_string')
+	static function getString(ctx:DukContext, idx:Int) : Dynamic;
+	
+	@:native('duk_get_prop_string')
+	static function getPropString(ctx:DukContext, idx:Int, key:Dynamic) : Dynamic;
 
-    //inline functions can be used as wrappers
-    //and can be useful to juggle haxe typing to or from the c++ extern
-    /*
-    static inline function inline_example() : Int {
-        return untyped __cpp__('linc::duktape::example()');
-    }
+	@:native('duk_get_prop_string')
+	static function getPropString(ctx:DukContext, idx:Int, key:Dynamic) : Dynamic;
 
-    @:native('linc::duktape::example')
-    private static function _internal_example() : Int;
-    static inline function other_inline_example() : Int {
-        return _internal_example();
-    }
-    */
+	@:native('duk_push_c_function')
+	static function pushCFunction(ctx:DukContext, func:cpp.Callable<DukContext -> Int>, idx:Int) : String;
 
-} //Duktape
+	// Dukglue.
+
+	@:native('dukglue_register_function')
+	static function registerFunction(ctx:DukContext, func:Function, name:String) : Void;
+	
+	/*
+	@:generic
+	@:native('dukglue_register_constructor')
+	static function registerConstructor<T:Dynamic>(t:T, ctx:DukContext, name:String) : Void;
+
+	@:native('linc::duktape::registerConstructor')
+	static function registerConstructor(cls:Dynamic, ctx:DukContext, name:String) : Void;
+		*/
+	
+	static inline function registerConstructor(ctx:DukContext, name:String) : Void {
+			untyped __cpp__('dukglue_register_constructor<::test::TestClass>(ctx, "TestClass")');
+	}
+
+	static inline function registerMethod(ctx:DukContext, name:String) : Void {
+			untyped __cpp__('dukglue_register_method(ctx, &::test::TestClass_obj::printAdventure, "printAdventure")');
+	}
+	
+	/*
+	@:native('dukglue_register_method')
+	static function registerMethod(ctx:DukContext, func:Function, name:String) : Void;
+	*/
+} // Duktape
